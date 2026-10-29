@@ -3,7 +3,7 @@
     "Author": "NightmareXIV",
     "Name": "Stylist",
     "InternalName": "Stylist",
-    "AssemblyVersion": "1.0.0.20",
+    "AssemblyVersion": "1.0.0.21",
     "Description": "Gear manager that will watch your gearset for possible upgrades and upgrade them via single command.",
     "ApplicableVersion": "any",
     "RepoUrl": "https://github.com/kaldigo/Stylist",
@@ -15,9 +15,9 @@
     "IconUrl": "https://raw.githubusercontent.com/kaldigo/Stylist/main/assets/icon.png",
     "Punchline": "Gear manager",
     "AcceptsFeedback": false,
-    "Changelog": "Validated fork update from source 5aba1536fc7b617525b502655266947155cd5d73. Storage sorting now uses the game's native IsItemRegisteredToGearset marker check on each inventory item. Marked items go to the armory chest; unmarked armory items go to regular inventory. Removes all custom saved-set scans and ID/quality/appearance matching. Uses the original Stylist emblem recoloured in the fork-family green-to-magenta palette. Build, storage, merge-policy and package checks passed. Existing IPC identity is preserved. Development preview; native UI acceptance testing remains separate.",
-    "DownloadLinkInstall": "https://github.com/kaldigo/Stylist/releases/download/v1.0.0.20/Stylist.zip",
-    "DownloadLinkUpdate": "https://github.com/kaldigo/Stylist/releases/download/v1.0.0.20/Stylist.zip",
-    "DownloadLinkTesting": "https://github.com/kaldigo/Stylist/releases/download/v1.0.0.20/Stylist.zip"
+    "Changelog": "Validated fork update from source 44f132d4d744dc8c379449460762d029d9bc8fd4. Storage reconciliation now uses the same all-saved-gearsets and equipped-item membership rule as Steward, including unchanged sets and items already in regular inventory. Referenced items move to the armory; unreferenced armory items move to inventory. HQ and appearance differences do not remove membership. Uses the original Stylist emblem recoloured in the fork-family green-to-magenta palette. Build, storage, merge-policy and package checks passed. Existing IPC identity is preserved. Development preview; native UI acceptance testing remains separate.",
+    "DownloadLinkInstall": "https://github.com/kaldigo/Stylist/releases/download/v1.0.0.21/Stylist.zip",
+    "DownloadLinkUpdate": "https://github.com/kaldigo/Stylist/releases/download/v1.0.0.21/Stylist.zip",
+    "DownloadLinkTesting": "https://github.com/kaldigo/Stylist/releases/download/v1.0.0.21/Stylist.zip"
   }
 ]
