@@ -31,6 +31,7 @@ public unsafe class MainWindow : ConfigWindow
         if(C.UseInventory)
         {
             ImGui.Checkbox("Move replaced items from armory chest to regular inventory", ref C.UnmoveItems);
+            ImGuiEx.Tooltip("After updating, keep items used by any saved gearset in the armory chest and move unused armory gear to inventory. Equipped gear stays equipped. Requires free destination space.");
         }
         ImGui.Checkbox($"Re-equip current gearset if it was updated", ref C.Reequip);
         if(ImGuiEx.IconButtonWithText(FontAwesomeIcon.Search, "Check For Suggestions"))

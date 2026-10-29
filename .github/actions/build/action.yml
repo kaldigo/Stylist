@@ -1,0 +1,35 @@
+name: Build Stylist
+description: Build against the current stable Dalamud development references.
+inputs:
+  release-version:
+    required: false
+    description: Optional assembly version for a planned automated release
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+    - name: Download Dalamud development references
+      shell: pwsh
+      run: |
+        $referencePath = Join-Path $env:RUNNER_TEMP 'stylist-dalamud'
+        $archivePath = Join-Path $env:RUNNER_TEMP 'stylist-dalamud.zip'
+        Invoke-WebRequest https://goatcorp.github.io/dalamud-distrib/stg/latest.zip -OutFile $archivePath
+        Expand-Archive $archivePath -DestinationPath $referencePath -Force
+        $dll = Get-ChildItem $referencePath -Recurse -Filter Dalamud.dll | Select-Object -First 1
+        if (-not $dll) { throw 'Dalamud development references missing' }
+        "DALAMUD_HOME=$($dll.Directory.FullName)\" | Out-File -FilePath $env:GITHUB_ENV -Append
+    - name: Build plugin
+      shell: pwsh
+      env:
+        RELEASE_VERSION: ${{ inputs.release-version }}
+      run: |
+        $arguments = @('build', 'Stylist/Stylist.csproj', '--configuration', 'Release', '--nologo')
+        if ($env:RELEASE_VERSION) { $arguments += "-p:ForkVersion=$env:RELEASE_VERSION" }
+        dotnet @arguments
+        if ($LASTEXITCODE) { exit $LASTEXITCODE }
+        if ($env:RELEASE_VERSION) {
+          $actual = [Reflection.AssemblyName]::GetAssemblyName((Join-Path $pwd 'Stylist/bin/Release/Stylist.dll')).Version
+          if ($actual -ne [version]$env:RELEASE_VERSION) { throw 'DLL version differs from planned release' }
+        }

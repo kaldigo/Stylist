@@ -1,0 +1,25 @@
+name: Validate fork
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          submodules: recursive
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: ./.github/actions/build
+      - shell: pwsh
+        run: |
+          dotnet run --project tests/StorageChecks -c Release
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python -m unittest discover -s tests -p 'test_*.py' -v
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python tools/check_package.py
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }

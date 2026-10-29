@@ -1,0 +1,158 @@
+name: Check upstream updates
+on:
+  schedule:
+    - cron: '23 6 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+concurrency:
+  group: stylist-upstream-sync
+  cancel-in-progress: false
+jobs:
+  sync:
+    if: github.repository == 'kaldigo/Stylist'
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      SYNC_BRANCH: codex/upstream-sync
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+          submodules: recursive
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build syntax reviewer from the trusted default branch
+        shell: pwsh
+        run: |
+          $reviewPath = Join-Path $env:RUNNER_TEMP 'upstream-review'
+          dotnet build tools/UpstreamReview/UpstreamReview.csproj -c Release -o $reviewPath --nologo
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          "UPSTREAM_REVIEW_DLL=$(Join-Path $reviewPath 'UpstreamReview.dll')" | Out-File -FilePath $env:GITHUB_ENV -Append
+      - name: Keep trusted policy and merge tools from the default branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/upstream-tools"
+          cp tools/upstream_policy.py tools/merge_routine_upstream.py tools/dispatch_routine_release.py "$RUNNER_TEMP/upstream-tools/"
+      - name: Recover publication of the most recent routine merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: python tools/dispatch_routine_release.py --recover --branch "$DEFAULT_BRANCH"
+      - name: Merge upstream on the update branch
+        id: merge
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git remote add upstream https://github.com/NightmareXIV/Stylist.git
+          git fetch --no-tags upstream main
+          base=$(git rev-parse "origin/$DEFAULT_BRANCH")
+          upstream=$(git rev-parse upstream/main)
+          echo "base=$base" >> "$GITHUB_OUTPUT"
+          echo "upstream=$upstream" >> "$GITHUB_OUTPUT"
+          if git merge-base --is-ancestor "$upstream" "$base"; then
+            echo 'Upstream is already included.' >> "$GITHUB_STEP_SUMMARY"
+            echo 'changed=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          conflict=false
+          if git show-ref --verify --quiet "refs/remotes/origin/$SYNC_BRANCH"; then
+            git switch -c "$SYNC_BRANCH" "origin/$SYNC_BRANCH"
+            if ! git merge --no-edit "$base"; then
+              git merge --abort
+              conflict=true
+            fi
+          else
+            git switch -c "$SYNC_BRANCH" "$base"
+          fi
+          if [ "$conflict" = false ] && ! git merge --no-edit "$upstream"; then
+            git merge --abort
+            conflict=true
+          fi
+          if [ "$conflict" = true ]; then
+            SYNC_BRANCH="codex/upstream-conflict-${upstream:0:12}-${base:0:8}"
+            git switch -c "$SYNC_BRANCH" "$upstream"
+          else
+            git submodule sync --recursive
+            git submodule update --init --recursive
+          fi
+          echo "branch=$SYNC_BRANCH" >> "$GITHUB_OUTPUT"
+          echo "conflict=$conflict" >> "$GITHUB_OUTPUT"
+          echo 'changed=true' >> "$GITHUB_OUTPUT"
+      - name: Classify the complete proposed update
+        if: steps.merge.outputs.changed == 'true'
+        env:
+          BASE_SHA: ${{ steps.merge.outputs.base }}
+          UPSTREAM_SHA: ${{ steps.merge.outputs.upstream }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python "$RUNNER_TEMP/upstream-tools/upstream_policy.py" --base "$BASE_SHA" --upstream "$UPSTREAM_SHA" --output "$RUNNER_TEMP/upstream-policy.json"
+          cat "$RUNNER_TEMP/upstream-policy.json.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Open or update the review pull request before running checks
+        id: pr
+        if: steps.merge.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SYNC_BRANCH: ${{ steps.merge.outputs.branch }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh auth setup-git
+          git push origin "HEAD:refs/heads/$SYNC_BRANCH"
+          printf '\nValidation run: %s/%s/actions/runs/%s\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" >> "$RUNNER_TEMP/upstream-policy.json.md"
+          printf '\nChecks are pending, or skipped if this proposal has a merge conflict.\n' >> "$RUNNER_TEMP/upstream-policy.json.md"
+          pr=$(gh pr list --head "$SYNC_BRANCH" --base "$DEFAULT_BRANCH" --state open --json url --jq '.[0].url // empty')
+          if [ -z "$pr" ]; then
+            pr=$(gh pr create --head "$SYNC_BRANCH" --base "$DEFAULT_BRANCH" --title 'Merge upstream Stylist updates' --body-file "$RUNNER_TEMP/upstream-policy.json.md")
+          else
+            gh pr edit "$pr" --body-file "$RUNNER_TEMP/upstream-policy.json.md"
+          fi
+          echo "url=$pr" >> "$GITHUB_OUTPUT"
+          echo "$pr" >> "$GITHUB_STEP_SUMMARY"
+      - name: Build the proposed merge
+        if: steps.merge.outputs.changed == 'true' && steps.merge.outputs.conflict == 'false'
+        uses: ./.github/actions/build
+      - name: Run configuration, policy and packaging regression checks
+        if: steps.merge.outputs.changed == 'true' && steps.merge.outputs.conflict == 'false'
+        shell: pwsh
+        run: |
+          python -m unittest discover -s tests -p 'test_*.py' -v
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          dotnet run --project tests/StorageChecks -c Release
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python tools/check_package.py
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Merge only a routine update that passed every check
+        if: success() && steps.merge.outputs.changed == 'true' && steps.merge.outputs.conflict == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SYNC_BRANCH: ${{ steps.merge.outputs.branch }}
+          PR_URL: ${{ steps.pr.outputs.url }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh auth setup-git
+          printf '\nBuild, configuration regressions, policy regressions and package validation PASSED.\n' >> "$RUNNER_TEMP/upstream-policy.json.md"
+          gh pr edit "$PR_URL" --body-file "$RUNNER_TEMP/upstream-policy.json.md"
+          python "$RUNNER_TEMP/upstream-tools/merge_routine_upstream.py" --policy "$RUNNER_TEMP/upstream-policy.json" --default-branch "$DEFAULT_BRANCH" --sync-branch "$SYNC_BRANCH" --pr "$PR_URL" >> "$GITHUB_STEP_SUMMARY"
+      - name: Explain a failed validation
+        if: failure()
+        shell: bash
+        run: |
+          echo 'Upstream validation or release dispatch failed. Review the failed step and any open PR. A successful merge followed by a dispatch failure is recovered on the next run. Sensitive updates never queue automatic releases.' >> "$GITHUB_STEP_SUMMARY"

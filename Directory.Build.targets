@@ -1,0 +1,13 @@
+<Project>
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Stylist' and '$(ForkVersion)' != ''">
+    <Version>$(ForkVersion)</Version>
+    <AssemblyVersion>$(ForkVersion)</AssemblyVersion>
+    <FileVersion>$(ForkVersion)</FileVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(DALAMUD_HOME)' != ''">
+    <DalamudLibPath>$(DALAMUD_HOME)/</DalamudLibPath>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(MSBuildProjectName)' == 'ECommons'">
+    <Compile Include="$(MSBuildThisFileDirectory)tools/ECommonsCompatibility.cs" />
+  </ItemGroup>
+</Project>

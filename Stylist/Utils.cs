@@ -88,7 +88,6 @@ public static unsafe class Utils
             PluginLog.Debug($"Gearset {index + 1} blacklisted");
             return;
         }
-        List<RaptureGearsetModule.GearsetItem> itemsToUnmove = [];
         if(index < r->NumGearsets && r->IsValidGearset(index))
         {
             var entry = r->Entries.GetPointer(index);
@@ -117,7 +116,6 @@ public static unsafe class Utils
                         if(candidate.Value.Type.EqualsAny(InventoryType.Inventory1, InventoryType.Inventory2, InventoryType.Inventory3, InventoryType.Inventory4))
                         {
                             S.ItemMover.ItemsToMove.Add(candidate.Value);
-                            itemsToUnmove.Add(gsItem);
                         }
                         PluginLog.Debug($"Setting item for slot {q}");
                         shouldEquip ??= isCurrent && C.Reequip;
@@ -154,12 +152,8 @@ public static unsafe class Utils
             {
                 return !Utils.CheckForUpdateNeeded(index, includeInventory);
             }, new(showDebug: true));
-            if(C.UnmoveItems)
-            {
-                P.TaskManager.Enqueue(() => S.ItemMover.ItemsToUnmove = itemsToUnmove);
-                P.TaskManager.Enqueue(() => S.ItemMover.ItemsToUnmove.Count == 0, new(showDebug: true));
-            }
         }
+        if(C.UnmoveItems) GearsetStorage.Schedule();
     }
 
     public static bool CheckForUpdateNeeded(int index, bool includeInventory = true)

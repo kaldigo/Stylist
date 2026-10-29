@@ -6,6 +6,7 @@ on:
 
 jobs:
   TriggerUpdatePluginmaster:
+    if: github.repository == 'NightmareXIV/Stylist'
     uses:
       NightmareXIV/MyDalamudPlugins/.github/workflows/Trigger_Update_Pluginmaster.yml@main
     secrets: inherit
