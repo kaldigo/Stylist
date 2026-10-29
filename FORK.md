@@ -8,7 +8,7 @@ Use it as a replacement for upstream Stylist; do not enable both copies.
 The existing **Move replaced items from armory chest to regular inventory**
 setting now sorts storage after updates, even when no upgrade was needed or
 re-equipping is disabled. All valid saved gearsets, including blacklisted sets,
-protect their item IDs, including HQ. Every existing entry is considered even
+protect their base item IDs, for both NQ and HQ copies. Every existing entry is considered even
 if it cannot currently be equipped. Dye, materia and glamour differences do
 not invalidate membership: saved details can be stale. Matching duplicate items
 are retained. Equipped items remain equipped; soul
@@ -21,6 +21,8 @@ Full destinations, blocked moves or timeout produce a warning without deleting
 or replacing items. No spare capacity in either direction requires freeing a
 slot manually. Logout, character changes or disabling the setting cancel sorting.
 If no saved item IDs are available, sorting stops without moving anything.
+If gearset membership changes during a pass, sorting stops instead of reversing
+earlier moves. Each requested move logs the item ID, membership decision and slots.
 
 The implementation is contained in `GearsetStorage.cs`, with one scheduling
 hook replacing upstream's old replaced-item task. No dependency pins changed.

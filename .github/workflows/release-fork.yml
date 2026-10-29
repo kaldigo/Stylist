@@ -90,7 +90,7 @@ jobs:
         shell: pwsh
         run: |
           $kind = if ($env:IS_ROUTINE -eq 'true') { 'Routine upstream update' } else { 'Validated fork update' }
-          "$kind from source $env:SOURCE_COMMIT. Fixes storage sorting evicting gear used by other saved sets when dye, materia or glamour details are stale: every existing saved-set item ID is protected, and matching items in inventory return to the armory chest. Uses the original Stylist emblem recoloured in the fork-family green-to-magenta palette. Build, storage, merge-policy and package checks passed. Existing IPC identity is preserved. Development preview; native UI acceptance testing remains separate." | Set-Content "$env:RUNNER_TEMP/plugin-changelog.txt" -Encoding utf8
+          "$kind from source $env:SOURCE_COMMIT. Storage sorting compares base item IDs across all saved sets, ignoring quality and appearance differences. Stops if gearset membership changes during sorting to prevent reversing earlier moves. Logs membership and move decisions for diagnosis. Uses the original Stylist emblem recoloured in the fork-family green-to-magenta palette. Build, storage, merge-policy and package checks passed. Existing IPC identity is preserved. Development preview; native UI acceptance testing remains separate." | Set-Content "$env:RUNNER_TEMP/plugin-changelog.txt" -Encoding utf8
           python tools/package_release.py --tag $env:RELEASE_TAG --changelog-file "$env:RUNNER_TEMP/plugin-changelog.txt"
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Publish or recover the validated release and source feed

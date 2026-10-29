@@ -56,7 +56,12 @@ unsafe class Program
         Reset(); Use(10); *Slot(InventoryType.Inventory1) = Item(10); C.UnmoveItems = false; Run(); Check(InventoryManager.MoveCount == 0, "Setting disabled");
         Reset(); Use(10); *Slot(InventoryType.Inventory1) = Item(10); var changed = new GearsetStorage(); Player.CID = 2; Check(Step(changed) && InventoryManager.MoveCount == 0, "Character change cancels");
         Reset(); Use(10); *Slot(InventoryType.ArmoryHead) = Item(10); Slot(InventoryType.ArmoryHead)->Dye0 = 5; Run(); Check(Slot(InventoryType.ArmoryHead)->ItemId == 10, "Stale dye must not evict saved gear");
-        Reset(); Use(10); *Slot(InventoryType.ArmoryHead) = Item(1000010); Run(); Check(Slot(InventoryType.ArmoryHead)->ItemId == 0, "HQ distinguished");
+        Reset(); Use(10); *Slot(InventoryType.ArmoryHead) = Item(1000010); Run(); Check(Slot(InventoryType.ArmoryHead)->ItemId == 1000010, "HQ copy of saved item stays protected");
+        Reset(); Use(1000010); *Slot(InventoryType.ArmoryHead) = Item(10); Run(); Check(Slot(InventoryType.ArmoryHead)->ItemId == 10, "NQ copy of saved HQ item stays protected");
+        Reset(); Use(10); *Slot(InventoryType.Inventory1) = Item(1000010); Run(); Check(Slot(InventoryType.ArmoryHead)->ItemId == 1000010, "HQ gearset item enters and remains in armory");
+        Reset(); Use(10); *Slot(InventoryType.Inventory1) = Item(10); var changing = new GearsetStorage();
+        Check(!Step(changing) && Slot(InventoryType.ArmoryHead)->ItemId == 10, "First move enters armory");
+        Use(99); Check(Step(changing) && Slot(InventoryType.ArmoryHead)->ItemId == 10 && DuoLog.Warnings.Count == 1, "Changing membership cannot reverse an earlier move");
         Reset(); Use(10); *Slot(InventoryType.ArmoryHead) = Item(10); Slot(InventoryType.ArmoryHead)->MateriaId = 7; Run(); Check(Slot(InventoryType.ArmoryHead)->ItemId == 10, "Stale materia must not evict saved gear");
         Reset(); Use(10); *Slot(InventoryType.ArmoryHead) = Item(10); Slot(InventoryType.ArmoryHead)->GlamourId = 7; Run(); Check(Slot(InventoryType.ArmoryHead)->ItemId == 10, "Stale glamour must not evict saved gear");
         Reset(); Use(10); *Slot(InventoryType.Inventory1) = Item(10);

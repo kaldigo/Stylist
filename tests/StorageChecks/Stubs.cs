@@ -20,6 +20,7 @@ public static class Harness
     }
     public sealed class Options { public Options(bool showDebug, int timeLimitMS) {} }
     public static class DuoLog { public static List<string> Warnings = []; public static void Warning(string s) => Warnings.Add(s); }
+    public static class PluginLog { public static void Information(string s) {} }
     public static class S { public static Mover ItemMover = new(); }
     public sealed class Mover { public List<int> ItemsToMove = []; public List<int> ItemsToUnmove = []; }
 }
