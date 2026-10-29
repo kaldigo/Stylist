@@ -2,7 +2,9 @@
 
 Preserve internal identity, command, saved configuration and every IPC endpoint.
 Keep sorting contained in GearsetStorage and its scheduling hook. UnmoveItems
-controls it; protect every valid saved gearset, not only the updated subset.
+controls it; protect item IDs in every existing saved gearset, not only the
+updated subset. Never require matching dye, materia or glamour for membership;
+saved details can be stale. HQ remains part of the saved item ID.
 Never move equipped items or overwrite occupied destinations. Re-read state
 between moves and keep cancellation and timeout bounded.
 

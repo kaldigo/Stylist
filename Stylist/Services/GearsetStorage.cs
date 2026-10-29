@@ -43,13 +43,16 @@ public unsafe sealed class GearsetStorage
         }
         var sets = RaptureGearsetModule.Instance();
         if(sets == null) return true;
-        var gear = new List<RaptureGearsetModule.GearsetItem>();
+        var gear = new HashSet<uint>();
         for(var i = 0; i < sets->Entries.Length; i++)
         {
-            if(!sets->IsValidGearset(i)) continue;
+            // Protect every existing entry, even if it cannot currently be equipped.
+            // Update filters and blacklists must never narrow storage protection.
+            if(!sets->Entries[i].Flags.HasFlag(RaptureGearsetModule.GearsetFlag.Exists)) continue;
             foreach(var item in sets->Entries[i].Items)
-                if(item.ItemId != 0) gear.Add(item);
+                if(item.ItemId != 0) gear.Add(item.ItemId);
         }
+        if(gear.Count == 0) return Stop("No saved gearset items were available; storage sorting skipped.");
         var blocked = false;
         // Move unused armoury gear out first to make room for gearset items.
         foreach(var source in Armory.Concat(Bags))
@@ -59,14 +62,9 @@ public unsafe sealed class GearsetStorage
             {
                 var item = container->GetInventorySlot(slot);
                 if(item == null || item->ItemId == 0) continue;
-                var used = false;
-                foreach(var saved in gear)
-                {
-                    // Preserve HQ, dye, materia and glamour distinctions, as upstream does.
-                    if(item->GetItemId() == saved.ItemId && item->Stains.SequenceEqual([saved.Stain0Id, saved.Stain1Id])
-                        && item->Materia.SequenceEqual(saved.Materia) && item->MateriaGrades.SequenceEqual(saved.MateriaGrades)
-                        && item->GlamourId == saved.GlamourId) { used = true; break; }
-                }
+                // Storage membership is the saved item ID (including HQ). Dyes,
+                // materia and glamour can change without re-saving every gearset.
+                var used = gear.Contains(item->GetItemId());
                 var inArmory = Armory.Contains(source);
                 if(used == inArmory) continue;
                 var destinations = inArmory ? Bags : Armory;

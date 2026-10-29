@@ -99,7 +99,8 @@ namespace FFXIVClientStructs.FFXIV.Client.UI.Misc
             public ReadOnlySpan<ushort> Materia => new ushort[] { MateriaId };
             public ReadOnlySpan<byte> MateriaGrades => new byte[] { Grade };
         }
-        public struct Entry { public bool Valid; public GearsetItem* Pointer; public int Count; public Span<GearsetItem> Items => new(Pointer, Count); }
+        [Flags] public enum GearsetFlag : byte { Exists = 1 }
+        public struct Entry { public bool Valid; public GearsetFlag Flags; public GearsetItem* Pointer; public int Count; public Span<GearsetItem> Items => new(Pointer, Count); }
         public struct EntriesArray
         {
             public Entry* Pointer;
