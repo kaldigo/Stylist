@@ -7,6 +7,6 @@
     "Punchline": "Gear manager",
     "RepoUrl": "https://github.com/kaldigo/Stylist",
     "AcceptsFeedback": false,
-    "IconUrl": "",
+    "IconUrl": "https://raw.githubusercontent.com/kaldigo/Stylist/main/Stylist/images/icon.png",
     "DalamudApiLevel": 15
 }
