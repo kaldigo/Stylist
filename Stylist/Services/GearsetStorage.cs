@@ -13,6 +13,8 @@ public unsafe sealed class GearsetStorage
     private long started;
     private long nextMove;
     private int moves;
+    private (InventoryType Source, int Slot, uint ItemId, InventoryType Target, int Free)? pending;
+    private int attempts;
     private static readonly InventoryType[] Bags = [InventoryType.Inventory1, InventoryType.Inventory2, InventoryType.Inventory3, InventoryType.Inventory4];
     private static readonly InventoryType[] Armory = Utils.ValidInventoriesArmory.Where(x => x != InventoryType.EquippedItems && x != InventoryType.ArmoryWaist).ToArray();
 
@@ -21,14 +23,14 @@ public unsafe sealed class GearsetStorage
         var ticket = ++generation;
         var storage = new GearsetStorage();
         // Multiple updates in a batch collapse into one final reconciliation.
-        P.TaskManager.Enqueue(() => ticket != generation || storage.Step(), new(showDebug: true, timeLimitMS: 120000));
+        P.TaskManager.Enqueue(() => ticket != generation || storage.Step(), new(showDebug: true, timeLimitMS: 330000));
     }
 
     private bool Step()
     {
         if(!C.UnmoveItems || !Svc.ClientState.IsLoggedIn || !Player.Available || Player.CID != character) return true;
         if(started == 0) started = Environment.TickCount64;
-        if(Environment.TickCount64 - started > 90000 || moves >= 300)
+        if(Environment.TickCount64 - started > 300000 || moves >= 1000)
             return Stop("Storage sorting stopped before completion; some items may remain in their original containers.");
         if(!Player.Interactable || !IsScreenReady() || S.ItemMover.ItemsToMove.Count != 0 || S.ItemMover.ItemsToUnmove.Count != 0) return false;
         if(Environment.TickCount64 < nextMove) return false;
@@ -77,10 +79,14 @@ public unsafe sealed class GearsetStorage
                     for(var free = 0; free < destination->Size; free++)
                     {
                         if(destination->GetInventorySlot(free)->ItemId != 0) continue;
+                        var request = (source, slot, item->GetItemId(), target, free);
+                        if(pending == request) attempts++;
+                        else { pending = request; attempts = 1; }
+                        if(attempts > 10) return Stop("Storage sorting stopped: the game did not complete an item move. Try again when inventory actions are available.");
                         manager->MoveItemSlot(source, (ushort)slot, target, (ushort)free, true);
                         nextMove = Environment.TickCount64 + 500;
                         moves++;
-                        return false; // Re-read gearsets and containers after each acknowledged move.
+                        return false; // Re-read gearsets and containers after each move request.
                     }
                 }
                 blocked = true;

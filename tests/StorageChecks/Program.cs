@@ -59,8 +59,10 @@ unsafe class Program
         Reset(); GearsetStorage.Schedule(); GearsetStorage.Schedule(); Check(P.TaskManager.Work.Count == 2 && P.TaskManager.Work[0](), "Batch coalescing");
         Reset(); Use(10); *Slot(InventoryType.Inventory1) = Item(10); InventoryManager.RejectMoves = true;
         var stuck = new GearsetStorage(); Check(!Step(stuck), "Rejected move remains pending");
-        typeof(GearsetStorage).GetField("started", BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(stuck, Environment.TickCount64 - 91000);
+        typeof(GearsetStorage).GetField("started", BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(stuck, Environment.TickCount64 - 301000);
         Check(Step(stuck) && DuoLog.Warnings.Count == 1 && Slot(InventoryType.Inventory1)->ItemId == 10, "Blocked move times out without item loss");
+        Reset(); Use(10); *Slot(InventoryType.Inventory1) = Item(10); InventoryManager.RejectMoves = true; Run();
+        Check(InventoryManager.MoveCount == 10 && DuoLog.Warnings.Count == 1, "Rejected move retries are bounded");
         Console.WriteLine("Storage checks passed: both directions, shared gear, variants, disabled setting, character change, capacity, batching and rejected moves.");
     }
 }
