@@ -2,10 +2,11 @@
 
 Preserve internal identity, command, saved configuration and every IPC endpoint.
 Keep sorting contained in GearsetStorage and its scheduling hook. UnmoveItems
-controls it; protect item IDs in every existing saved gearset, not only the
-updated subset. Never require matching dye, materia or glamour for membership;
-saved details can be stale. Compare base item IDs, protecting both NQ/HQ copies.
-Stop a pass if saved-set membership changes while moves are in progress.
+controls it. Use RaptureGearsetModule.IsItemRegisteredToGearset on the actual
+InventoryItem pointer: this is the game's check for the inventory icon's gearset
+mark. Marked items belong in the armoury, unmarked items in regular inventory.
+Never replace this with saved-entry scans, ID comparisons or quality/appearance
+heuristics. An unavailable marker check must never be treated as unmarked.
 Never move equipped items or overwrite occupied destinations. Re-read state
 between moves and keep cancellation and timeout bounded.
 

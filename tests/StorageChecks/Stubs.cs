@@ -53,6 +53,7 @@ namespace FFXIVClientStructs.FFXIV.Client.Game
     public unsafe struct InventoryItem
     {
         public uint ItemId, GlamourId, Category;
+        public bool GearsetMarked;
         public byte Dye0, Dye1, Grade;
         public ushort MateriaId;
         public uint GetItemId() => ItemId;
@@ -88,25 +89,16 @@ namespace FFXIVClientStructs.FFXIV.Client.UI.Misc
 {
     public unsafe struct RaptureGearsetModule
     {
-        public EntriesArray Entries;
-        private static RaptureGearsetModule* instance = (RaptureGearsetModule*)NativeMemory.AllocZeroed((nuint)sizeof(RaptureGearsetModule));
-        public static RaptureGearsetModule* Instance() => instance;
-        public bool IsValidGearset(int i) => Entries[i].Valid;
-        public struct GearsetItem
+        private static RaptureGearsetModule* instance = (RaptureGearsetModule*)NativeMemory.AllocZeroed(1);
+        public static bool Available = true;
+        public static int MarkerChecks;
+        public static RaptureGearsetModule* Instance() => Available ? instance : null;
+        // Stub only the native boundary. No saved sets or ID inference exist here.
+        public bool IsItemRegisteredToGearset(InventoryItem* item, void* itemRow = null, int equipSlotIndex = 14)
         {
-            public uint ItemId, GlamourId;
-            public byte Stain0Id, Stain1Id, Grade;
-            public ushort MateriaId;
-            public ReadOnlySpan<ushort> Materia => new ushort[] { MateriaId };
-            public ReadOnlySpan<byte> MateriaGrades => new byte[] { Grade };
-        }
-        [Flags] public enum GearsetFlag : byte { Exists = 1 }
-        public struct Entry { public bool Valid; public GearsetFlag Flags; public GearsetItem* Pointer; public int Count; public Span<GearsetItem> Items => new(Pointer, Count); }
-        public struct EntriesArray
-        {
-            public Entry* Pointer;
-            public int Length;
-            public ref Entry this[int i] => ref Pointer[i];
+            if(itemRow != null || equipSlotIndex != 14) throw new Exception("Unexpected native marker arguments");
+            MarkerChecks++;
+            return item->GearsetMarked;
         }
     }
 }

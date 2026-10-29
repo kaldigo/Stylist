@@ -15,7 +15,6 @@ public unsafe sealed class GearsetStorage
     private int moves;
     private (InventoryType Source, int Slot, uint ItemId, InventoryType Target, int Free)? pending;
     private int attempts;
-    private HashSet<uint> gearsetItems;
     private static readonly InventoryType[] Bags = [InventoryType.Inventory1, InventoryType.Inventory2, InventoryType.Inventory3, InventoryType.Inventory4];
     private static readonly InventoryType[] Armory = Utils.ValidInventoriesArmory.Where(x => x != InventoryType.EquippedItems && x != InventoryType.ArmoryWaist).ToArray();
 
@@ -44,19 +43,6 @@ public unsafe sealed class GearsetStorage
         }
         var sets = RaptureGearsetModule.Instance();
         if(sets == null) return true;
-        var gear = new HashSet<uint>();
-        for(var i = 0; i < sets->Entries.Length; i++)
-        {
-            // Protect every existing entry, even if it cannot currently be equipped.
-            // Update filters and blacklists must never narrow storage protection.
-            if(!sets->Entries[i].Flags.HasFlag(RaptureGearsetModule.GearsetFlag.Exists)) continue;
-            foreach(var item in sets->Entries[i].Items)
-                if(item.ItemId != 0) gear.Add(item.ItemId % 1000000);
-        }
-        if(gear.Count == 0) return Stop("No saved gearset items were available; storage sorting skipped.");
-        if(gearsetItems != null && !gearsetItems.SetEquals(gear))
-            return Stop("Gearsets changed during storage sorting; stopped to avoid reversing item moves. Run the update again.");
-        gearsetItems ??= gear;
         var blocked = false;
         // Move unused armoury gear out first to make room for gearset items.
         foreach(var source in Armory.Concat(Bags))
@@ -66,9 +52,8 @@ public unsafe sealed class GearsetStorage
             {
                 var item = container->GetInventorySlot(slot);
                 if(item == null || item->ItemId == 0) continue;
-                // Membership is the base item ID across all saved sets. Quality,
-                // dyes, materia and glamour do not remove gearset protection.
-                var used = gear.Contains(item->GetItemId() % 1000000);
+                // This is the game's own check for the gearset mark on item icons.
+                var used = sets->IsItemRegisteredToGearset(item);
                 var inArmory = Armory.Contains(source);
                 if(used == inArmory) continue;
                 var destinations = inArmory ? Bags : Armory;
