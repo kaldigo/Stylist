@@ -3,7 +3,7 @@
     "Author": "NightmareXIV",
     "Name": "Stylist",
     "InternalName": "Stylist",
-    "AssemblyVersion": "1.0.0.19",
+    "AssemblyVersion": "1.0.0.20",
     "Description": "Gear manager that will watch your gearset for possible upgrades and upgrade them via single command.",
     "ApplicableVersion": "any",
     "RepoUrl": "https://github.com/kaldigo/Stylist",
@@ -15,9 +15,9 @@
     "IconUrl": "https://raw.githubusercontent.com/kaldigo/Stylist/main/assets/icon.png",
     "Punchline": "Gear manager",
     "AcceptsFeedback": false,
-    "Changelog": "Validated fork update from source 70cf2594715726ad937198c454f84192eb95bcd3. Storage sorting compares base item IDs across all saved sets, ignoring quality and appearance differences. Stops if gearset membership changes during sorting to prevent reversing earlier moves. Logs membership and move decisions for diagnosis. Uses the original Stylist emblem recoloured in the fork-family green-to-magenta palette. Build, storage, merge-policy and package checks passed. Existing IPC identity is preserved. Development preview; native UI acceptance testing remains separate.",
-    "DownloadLinkInstall": "https://github.com/kaldigo/Stylist/releases/download/v1.0.0.19/Stylist.zip",
-    "DownloadLinkUpdate": "https://github.com/kaldigo/Stylist/releases/download/v1.0.0.19/Stylist.zip",
-    "DownloadLinkTesting": "https://github.com/kaldigo/Stylist/releases/download/v1.0.0.19/Stylist.zip"
+    "Changelog": "Validated fork update from source 5aba1536fc7b617525b502655266947155cd5d73. Storage sorting now uses the game's native IsItemRegisteredToGearset marker check on each inventory item. Marked items go to the armory chest; unmarked armory items go to regular inventory. Removes all custom saved-set scans and ID/quality/appearance matching. Uses the original Stylist emblem recoloured in the fork-family green-to-magenta palette. Build, storage, merge-policy and package checks passed. Existing IPC identity is preserved. Development preview; native UI acceptance testing remains separate.",
+    "DownloadLinkInstall": "https://github.com/kaldigo/Stylist/releases/download/v1.0.0.20/Stylist.zip",
+    "DownloadLinkUpdate": "https://github.com/kaldigo/Stylist/releases/download/v1.0.0.20/Stylist.zip",
+    "DownloadLinkTesting": "https://github.com/kaldigo/Stylist/releases/download/v1.0.0.20/Stylist.zip"
   }
 ]
