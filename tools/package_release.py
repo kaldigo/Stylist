@@ -26,7 +26,7 @@ def package(tag, changelog=None):
         for name in dependencies:
             z.write(build / name, name)
         z.writestr('Stylist.json', json.dumps(manifest, indent=2) + '\n')
-        z.write(root / 'Stylist/images/icon.png', 'images/icon.png')
+        z.write(root / 'assets/icon.png', 'images/icon.png')
         z.write(root / 'ECommons/LICENSE.md', 'licenses/ECommons.txt')
         z.write(root / 'NightmareUI/LICENSE', 'licenses/NightmareUI.txt')
         z.write(root / 'FORK.md', 'FORK.md')

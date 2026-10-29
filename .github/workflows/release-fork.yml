@@ -90,7 +90,7 @@ jobs:
         shell: pwsh
         run: |
           $kind = if ($env:IS_ROUTINE -eq 'true') { 'Routine upstream update' } else { 'Validated fork update' }
-          "$kind from source $env:SOURCE_COMMIT. Build, configuration, merge-policy and package checks passed. Preserves gearset storage sorting under UnmoveItems and existing IPC identity. Development preview; native UI acceptance testing remains separate." | Set-Content "$env:RUNNER_TEMP/plugin-changelog.txt" -Encoding utf8
+          "$kind from source $env:SOURCE_COMMIT. Uses the original Stylist emblem recoloured in the fork-family green-to-magenta palette. Build, configuration, merge-policy and package checks passed. Preserves gearset storage sorting under UnmoveItems and existing IPC identity. Development preview; native UI acceptance testing remains separate." | Set-Content "$env:RUNNER_TEMP/plugin-changelog.txt" -Encoding utf8
           python tools/package_release.py --tag $env:RELEASE_TAG --changelog-file "$env:RUNNER_TEMP/plugin-changelog.txt"
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Publish or recover the validated release and source feed
