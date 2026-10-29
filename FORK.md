@@ -7,23 +7,24 @@ Use it as a replacement for upstream Stylist; do not enable both copies.
 
 The existing **Move replaced items from armory chest to regular inventory**
 setting now sorts storage after updates, even when no upgrade was needed or
-re-equipping is disabled. Sorting calls the game's own
-`RaptureGearsetModule.IsItemRegisteredToGearset(item)` function, documented in
-FFXIVClientStructs as the check used for the gearset mark on inventory icons.
-Marked items go to the armoury chest; unmarked armoury items go to regular
-inventory. There is no saved-set scan, ID matching, quality normalization or
-appearance heuristic. Equipped items stay equipped and soul crystals stay in
-their dedicated storage. Only the four ordinary inventory pages and supported
-armoury equipment containers participate.
+re-equipping is disabled. Membership matches Steward's InventoryView: collect
+item IDs from every existing saved gearset and equipped slot, normalized with
+`% 1000000`. All copies of a referenced item belong in the armoury, regardless
+of HQ, dye, materia or glamour. This includes unchanged and blacklisted sets.
+Equipped items remain equipped; soul crystals remain in dedicated storage.
 
-Sorting re-reads live containers and queries the native marker after every move.
-It evacuates unmarked armoury gear first and can bring marked bag items in when
-that frees bag space. Full destinations, blocked moves or timeout produce a
-warning without deleting or replacing items. No spare capacity in either
-direction requires freeing a slot manually. Logout, character changes or
-turning off the setting cancel sorting. An unavailable gearset module stops
-sorting without treating items as unmarked. Each requested move logs its native
-marker result and source/destination slots.
+The final reconciliation reads all saved sets and live containers after upstream
+moves finish, then re-reads between moves. Referenced bag items go into the
+armoury and unreferenced armoury items go into ordinary inventory. Full or blocked
+destinations warn without overwriting items. Logout, character changes or disabling
+the setting cancel sorting. Missing gearset data does not mean unreferenced.
+
+Native trace: `IsItemRegisteredToGearset` enumerates all sets, but resolves each
+reference to an actual equipped/armoury pointer; ordinary bags are not candidates.
+It therefore cannot recover gearset items already in bags. The previous tests
+incorrectly modeled that predicate as a location-independent per-item flag.
+The regression suite now supplies saved sets and exercises unchanged-set recovery,
+one-set updates preserving other sets, highest-index sets and a second no-op pass.
 
 The implementation is contained in `GearsetStorage.cs`, with one scheduling
 hook replacing upstream's old replaced-item task. No dependency pins changed.

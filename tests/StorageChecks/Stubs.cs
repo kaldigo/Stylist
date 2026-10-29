@@ -91,14 +91,15 @@ namespace FFXIVClientStructs.FFXIV.Client.UI.Misc
     {
         private static RaptureGearsetModule* instance = (RaptureGearsetModule*)NativeMemory.AllocZeroed(1);
         public static bool Available = true;
-        public static int MarkerChecks;
+        public static GearsetEntry[] Saved = new GearsetEntry[100];
+        public Span<GearsetEntry> Entries => Saved;
         public static RaptureGearsetModule* Instance() => Available ? instance : null;
-        // Stub only the native boundary. No saved sets or ID inference exist here.
-        public bool IsItemRegisteredToGearset(InventoryItem* item, void* itemRow = null, int equipSlotIndex = 14)
+        [Flags] public enum GearsetFlag : byte { Exists = 1 }
+        public struct GearsetEntry
         {
-            if(itemRow != null || equipSlotIndex != 14) throw new Exception("Unexpected native marker arguments");
-            MarkerChecks++;
-            return item->GearsetMarked;
+            public GearsetFlag Flags;
+            public GearsetItem[] Items;
         }
+        public struct GearsetItem { public uint ItemId; }
     }
 }

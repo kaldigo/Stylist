@@ -43,6 +43,21 @@ public unsafe sealed class GearsetStorage
         }
         var sets = RaptureGearsetModule.Instance();
         if(sets == null) return true;
+        // Same membership rule as Steward's InventoryView: every saved set,
+        // irrespective of update filters, current job, HQ or appearance changes.
+        var gear = new HashSet<uint>();
+        foreach(var set in sets->Entries)
+            if(set.Flags.HasFlag(RaptureGearsetModule.GearsetFlag.Exists))
+                foreach(var member in set.Items)
+                    if(member.ItemId != 0) gear.Add(member.ItemId % 1000000);
+        var equipped = manager->GetInventoryContainer(InventoryType.EquippedItems);
+        if(equipped == null || !equipped->IsLoaded) return false;
+        for(var slot = 0; slot < equipped->Size; slot++)
+        {
+            var item = equipped->GetInventorySlot(slot);
+            if(item != null && item->ItemId != 0) gear.Add(item->GetItemId() % 1000000);
+        }
+        if(gear.Count == 0) return Stop("No gearset or equipped items were available; storage sorting skipped.");
         var blocked = false;
         // Move unused armoury gear out first to make room for gearset items.
         foreach(var source in Armory.Concat(Bags))
@@ -52,8 +67,7 @@ public unsafe sealed class GearsetStorage
             {
                 var item = container->GetInventorySlot(slot);
                 if(item == null || item->ItemId == 0) continue;
-                // This is the game's own check for the gearset mark on item icons.
-                var used = sets->IsItemRegisteredToGearset(item);
+                var used = gear.Contains(item->GetItemId() % 1000000);
                 var inArmory = Armory.Contains(source);
                 if(used == inArmory) continue;
                 var destinations = inArmory ? Bags : Armory;

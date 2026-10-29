@@ -2,11 +2,12 @@
 
 Preserve internal identity, command, saved configuration and every IPC endpoint.
 Keep sorting contained in GearsetStorage and its scheduling hook. UnmoveItems
-controls it. Use RaptureGearsetModule.IsItemRegisteredToGearset on the actual
-InventoryItem pointer: this is the game's check for the inventory icon's gearset
-mark. Marked items belong in the armoury, unmarked items in regular inventory.
-Never replace this with saved-entry scans, ID comparisons or quality/appearance
-heuristics. An unavailable marker check must never be treated as unmarked.
+controls it. Use the same membership rule as Steward's InventoryView: all existing
+saved gearset entries plus equipped items, normalized by item ID % 1000000.
+Do not narrow membership to updated sets, the current set, filters or blacklists.
+The native icon predicate resolves an actual equipped/armoury item pointer and
+cannot identify references to items stranded in ordinary inventory. Do not use
+it for this reconciliation. An unavailable module must never mean unreferenced.
 Never move equipped items or overwrite occupied destinations. Re-read state
 between moves and keep cancellation and timeout bounded.
 
